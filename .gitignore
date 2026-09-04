@@ -46,3 +46,6 @@ app.*.map.json
 
 # Widget Preview related
 .widget_preview/
+
+# Local API credentials — copy env.example.json to env.json and add your TMDB token.
+env.json

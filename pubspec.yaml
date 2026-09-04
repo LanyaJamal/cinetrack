@@ -1,17 +1,20 @@
 name: cinetrack
-description: "A new Flutter project."
+description: "you can browse trending movies, search titles and keep user offline watchlist, built on the TMDB API."
 publish_to: 'none'
-
 version: 1.0.0+1
 
 environment:
-  sdk: ^3.13.0
+  sdk: ^3.12.0
+  flutter: '>=3.44.0'
 
 dependencies:
   flutter:
     sdk: flutter
 
-  cupertino_icons: ^1.0.8
+  cached_network_image: ^4.0.0
+  flutter_riverpod: ^3.4.3
+  http: ^1.6.0
+  shared_preferences: ^2.5.5
 
 dev_dependencies:
   flutter_test:
@@ -19,7 +22,5 @@ dev_dependencies:
 
   flutter_lints: ^6.0.0
 
-
 flutter:
   uses-material-design: true
-
