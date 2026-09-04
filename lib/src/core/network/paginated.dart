@@ -1,4 +1,3 @@
-/// One page of a tmdb list: `{page, results, total_pages}`.
 class Paginated<T> {
   const Paginated({
     required this.items,
@@ -12,7 +11,6 @@ class Paginated<T> {
   ) {
     final results = json['results'];
     return Paginated(
-      // whereType drops anything malformed rather than failing the whole page.
       items: results is List
           ? results.whereType<Map<String, dynamic>>().map(itemFromJson).toList()
           : const [],

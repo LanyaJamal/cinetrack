@@ -1,4 +1,3 @@
-/// Build time config, passed with --dart-define-from-file=env.json.
 class EnvConfig {
   const EnvConfig._();
 

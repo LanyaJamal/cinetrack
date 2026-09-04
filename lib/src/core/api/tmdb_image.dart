@@ -1,4 +1,3 @@
-/// Poster widths the CDN serves.
 enum PosterSize {
   w185('w185'),
   w342('w342'),
@@ -18,13 +17,11 @@ enum BackdropSize {
   final String value;
 }
 
-/// Image urls. Different host from the api, and only these fixed widths.
 class TmdbImage {
   const TmdbImage._();
 
   static const String _baseUrl = 'https://image.tmdb.org/t/p';
 
-  /// Null when the movie has no poster, which happens often.
   static String? poster(String? path, {PosterSize size = PosterSize.w342}) =>
       _url(path, size.value);
 
@@ -35,7 +32,7 @@ class TmdbImage {
 
   static String? _url(String? path, String size) {
     if (path == null || path.isEmpty) return null;
-    final normalised = path.startsWith('/') ? path : '/$path';
-    return '$_baseUrl/$size$normalised';
+    final withLeadingSlash = path.startsWith('/') ? path : '/$path';
+    return '$_baseUrl/$size$withLeadingSlash';
   }
 }

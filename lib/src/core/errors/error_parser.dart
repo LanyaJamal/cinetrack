@@ -10,8 +10,7 @@ ApiFailure parseError(Object error) {
     ClientException() ||
     IOException() ||
     TimeoutException() => const NetworkFailure(),
-    FormatException() => const ParseFailure(),
-    TypeError() => const ParseFailure(),
+    FormatException() || TypeError() => const ParseFailure(),
     _ => const UnknownFailure(),
   };
 }
