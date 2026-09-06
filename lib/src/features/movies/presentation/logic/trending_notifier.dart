@@ -1,4 +1,5 @@
 import 'package:cinetrack/src/core/errors/api_failure.dart';
+import 'package:cinetrack/src/core/errors/error_parser.dart';
 import 'package:cinetrack/src/core/errors/retry_policy.dart';
 import 'package:cinetrack/src/core/network/paginated.dart';
 import 'package:cinetrack/src/core/utils/result.dart';
@@ -57,9 +58,15 @@ class TrendingNotifier extends AsyncNotifier<TrendingFeed> {
     return _fetchAfter(TrendingFeed.empty);
   }
 
-  Future<void> refresh() async {
-    if (_isFetching) return;
-    state = await AsyncValue.guard(() => _fetchAfter(TrendingFeed.empty));
+  Future<ApiFailure?> refresh() async {
+    if (_isFetching) return null;
+    final previous = state;
+    final next = await AsyncValue.guard(() => _fetchAfter(TrendingFeed.empty));
+    if (next case AsyncError(:final error) when previous.hasValue) {
+      return parseError(error);
+    }
+    state = next;
+    return null;
   }
 
   Future<void> loadMore() async {
