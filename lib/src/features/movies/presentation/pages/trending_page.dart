@@ -18,6 +18,7 @@ class TrendingPage extends ConsumerWidget {
       body: SafeArea(
         top: false,
         child: switch (feed) {
+          AsyncValue(isLoading: true, hasValue: false) => const LoadingView(),
           AsyncData(:final value) =>
             value.movies.isEmpty
                 ? const EmptyView(
