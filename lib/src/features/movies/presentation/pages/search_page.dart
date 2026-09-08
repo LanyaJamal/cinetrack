@@ -1,3 +1,4 @@
+import 'package:cinetrack/src/app/routes.dart';
 import 'package:cinetrack/src/core/common/widgets/empty_view.dart';
 import 'package:cinetrack/src/core/common/widgets/error_view.dart';
 import 'package:cinetrack/src/core/common/widgets/loading_view.dart';
@@ -116,7 +117,17 @@ class _SearchResults extends StatelessWidget {
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
       padding: const EdgeInsets.only(bottom: 16),
       itemCount: movies.length,
-      itemBuilder: (context, index) => MovieListTile(movie: movies[index]),
+      itemBuilder: (context, index) => _tileFor(context, movies[index]),
     );
   }
+}
+
+Widget _tileFor(BuildContext context, MovieModel movie) {
+  final heroTag = 'search-${movie.id}';
+  return MovieListTile(
+    movie: movie,
+    heroTag: heroTag,
+    onTap: () =>
+        Navigator.of(context).push(movieDetailRoute(movie, heroTag: heroTag)),
+  );
 }

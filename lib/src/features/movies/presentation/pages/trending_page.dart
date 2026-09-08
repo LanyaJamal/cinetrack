@@ -1,7 +1,9 @@
+import 'package:cinetrack/src/app/routes.dart';
 import 'package:cinetrack/src/core/common/widgets/empty_view.dart';
 import 'package:cinetrack/src/core/common/widgets/error_view.dart';
 import 'package:cinetrack/src/core/common/widgets/loading_view.dart';
 import 'package:cinetrack/src/core/errors/failure_copy.dart';
+import 'package:cinetrack/src/features/movies/data/models/movie_model.dart';
 import 'package:cinetrack/src/features/movies/presentation/logic/trending_notifier.dart';
 import 'package:cinetrack/src/features/movies/presentation/widgets/movie_list_tile.dart';
 import 'package:flutter/cupertino.dart';
@@ -15,7 +17,16 @@ class TrendingPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final feed = ref.watch(trendingProvider);
     return Scaffold(
-      appBar: AppBar(title: const Text('Trending')),
+      appBar: AppBar(
+        title: const Text('Trending'),
+        actions: [
+          IconButton(
+            onPressed: () => Navigator.of(context).push(settingsRoute()),
+            tooltip: 'Settings',
+            icon: const Icon(Icons.settings_outlined),
+          ),
+        ],
+      ),
       body: SafeArea(
         top: false,
         child: switch (feed) {
@@ -95,7 +106,7 @@ class _TrendingListState extends ConsumerState<_TrendingList> {
         itemCount: movies.length + 1,
         itemBuilder: (context, index) => index == movies.length
             ? _ListFooter(feed: widget.feed)
-            : MovieListTile(movie: movies[index]),
+            : _tileFor(context, movies[index]),
       ),
     );
   }
@@ -155,4 +166,14 @@ class _ListFooter extends ConsumerWidget {
 
     return const SizedBox(height: 8);
   }
+}
+
+Widget _tileFor(BuildContext context, MovieModel movie) {
+  final heroTag = 'trending-${movie.id}';
+  return MovieListTile(
+    movie: movie,
+    heroTag: heroTag,
+    onTap: () =>
+        Navigator.of(context).push(movieDetailRoute(movie, heroTag: heroTag)),
+  );
 }

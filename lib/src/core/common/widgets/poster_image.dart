@@ -9,17 +9,23 @@ class PosterImage extends StatelessWidget {
     required this.path,
     this.width = 64,
     this.height = 96,
+    this.heroTag,
   });
 
   final String? path;
   final double width;
   final double height;
+  final String? heroTag;
 
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-    final url = TmdbImage.poster(path, size: PosterSize.w185);
-    return ClipRSuperellipse(
+    final url = TmdbImage.poster(
+      path,
+      size: width > 120 ? PosterSize.w342 : PosterSize.w185,
+    );
+    final tag = heroTag;
+    final image = ClipRSuperellipse(
       borderRadius: AppShape.smallRadius,
       child: SizedBox(
         width: width,
@@ -37,6 +43,7 @@ class PosterImage extends StatelessWidget {
               ),
       ),
     );
+    return tag == null ? image : Hero(tag: tag, child: image);
   }
 }
 
