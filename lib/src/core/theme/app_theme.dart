@@ -1,5 +1,6 @@
 import 'package:cinetrack/src/core/theme/app_shape.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class AppTheme {
   const AppTheme._();
@@ -68,6 +69,22 @@ class AppTheme {
     shadow: Color(0xFF000000),
   );
 
+  static SystemUiOverlayStyle overlayStyleFor(ColorScheme scheme) {
+    final dark = scheme.brightness == Brightness.dark;
+    return SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarBrightness: scheme.brightness,
+      statusBarIconBrightness: dark ? Brightness.light : Brightness.dark,
+      systemNavigationBarColor: Colors.transparent,
+      systemNavigationBarDividerColor: Colors.transparent,
+      systemNavigationBarIconBrightness: dark
+          ? Brightness.light
+          : Brightness.dark,
+      systemNavigationBarContrastEnforced: false,
+      systemStatusBarContrastEnforced: false,
+    );
+  }
+
   static ThemeData _themeFrom(ColorScheme scheme) {
     return ThemeData(
       colorScheme: scheme,
@@ -79,6 +96,7 @@ class AppTheme {
         scrolledUnderElevation: 0,
         elevation: 0,
         centerTitle: false,
+        systemOverlayStyle: overlayStyleFor(scheme),
         titleTextStyle: TextStyle(
           color: scheme.onSurface,
           fontSize: 22,

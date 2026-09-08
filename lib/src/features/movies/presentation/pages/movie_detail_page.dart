@@ -5,12 +5,14 @@ import 'package:cinetrack/src/core/errors/error_parser.dart';
 import 'package:cinetrack/src/core/errors/failure_copy.dart';
 import 'package:cinetrack/src/core/helpers/format_extensions.dart';
 import 'package:cinetrack/src/core/theme/app_shape.dart';
+import 'package:cinetrack/src/core/theme/app_theme.dart';
 import 'package:cinetrack/src/features/movies/data/models/movie_detail_model.dart';
 import 'package:cinetrack/src/features/movies/data/models/movie_model.dart';
 import 'package:cinetrack/src/features/movies/presentation/logic/movie_detail_provider.dart';
 import 'package:cinetrack/src/features/watchlist/presentation/widgets/watchlist_toggle_button.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class MovieDetailPage extends ConsumerStatefulWidget {
@@ -56,22 +58,41 @@ class _MovieDetailPageState extends ConsumerState<MovieDetailPage> {
   Widget build(BuildContext context) {
     final movie = widget.movie;
     final detail = ref.watch(movieDetailProvider(movie.id));
-    return Scaffold(
-      body: Stack(
-        children: [
-          ListView(
-            controller: _controller,
-            padding: EdgeInsets.only(
-              bottom: 32 + MediaQuery.paddingOf(context).bottom,
+    final scheme = Theme.of(context).colorScheme;
+    final overImage = _collapse < 0.5;
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: overImage
+          ? AppTheme.overlayStyleFor(scheme).copyWith(
+              statusBarBrightness: Brightness.dark,
+              statusBarIconBrightness: Brightness.light,
+            )
+          : AppTheme.overlayStyleFor(scheme),
+      child: Scaffold(
+        body: Stack(
+          children: [
+            ListView(
+              controller: _controller,
+              padding: EdgeInsets.only(
+                bottom: 32 + MediaQuery.paddingOf(context).bottom,
+              ),
+              children: [
+                _Backdrop(movie: movie),
+                SafeArea(
+                  top: false,
+                  bottom: false,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _TitleBlock(movie: movie, heroTag: widget.heroTag),
+                      _DetailSection(movie: movie, detail: detail),
+                    ],
+                  ),
+                ),
+              ],
             ),
-            children: [
-              _Backdrop(movie: movie),
-              _TitleBlock(movie: movie, heroTag: widget.heroTag),
-              _DetailSection(movie: movie, detail: detail),
-            ],
-          ),
-          _CollapsingBar(progress: _collapse, title: movie.title),
-        ],
+            _CollapsingBar(progress: _collapse, title: movie.title),
+          ],
+        ),
       ),
     );
   }
@@ -86,9 +107,9 @@ class _CollapsingBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final topInset = MediaQuery.paddingOf(context).top;
+    final insets = MediaQuery.paddingOf(context);
     return SizedBox(
-      height: topInset + kToolbarHeight,
+      height: insets.top + kToolbarHeight,
       child: DecoratedBox(
         decoration: BoxDecoration(
           color: theme.colorScheme.surface.withValues(alpha: progress),
@@ -102,7 +123,11 @@ class _CollapsingBar extends StatelessWidget {
           ),
         ),
         child: Padding(
-          padding: EdgeInsets.only(top: topInset, left: 8, right: 16),
+          padding: EdgeInsets.only(
+            top: insets.top,
+            left: 8 + insets.left,
+            right: 16 + insets.right,
+          ),
           child: Row(
             children: [
               _BackButton(progress: progress),
