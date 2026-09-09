@@ -7,7 +7,7 @@ A small Flutter app on top of the TMDB API. Browse what is trending, search for 
 
 - **Trending** – today's trending movies, infinite scroll, pull to refresh.
 - **Search** – results show after you stop typing, not on every letter.
-- **Details** – poster, backdrop, rating, genres, runtime, overview. Header collapses on scroll.
+- **Details** – poster, backdrop, rating, genres, runtime, overview, and a row of similar movies. Header collapses on scroll.
 - **Watchlist** – swipe left to remove, undo from the snackbar. Works with no internet.
 - **Settings** – Dark, Light or System theme, remembered between launches.
 

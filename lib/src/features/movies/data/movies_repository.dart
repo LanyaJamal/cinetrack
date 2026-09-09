@@ -12,6 +12,8 @@ abstract class MoviesRepository {
   Future<Result<Paginated<MovieModel>>> search(String query, {int page = 1});
 
   Future<Result<MovieDetailModel>> details(int id);
+
+  Future<Result<Paginated<MovieModel>>> recommendations(int id);
 }
 
 class MoviesRepositoryImpl implements MoviesRepository {
@@ -30,6 +32,10 @@ class MoviesRepositoryImpl implements MoviesRepository {
   @override
   Future<Result<MovieDetailModel>> details(int id) =>
       _guard(() => dataSource.details(id));
+
+  @override
+  Future<Result<Paginated<MovieModel>>> recommendations(int id) =>
+      _guard(() => dataSource.recommendations(id));
 
   Future<Result<T>> _guard<T>(Future<T> Function() request) async {
     try {

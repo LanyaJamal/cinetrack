@@ -1,10 +1,12 @@
 import 'package:cinetrack/src/app/routes.dart';
 import 'package:cinetrack/src/core/common/widgets/empty_view.dart';
 import 'package:cinetrack/src/core/common/widgets/error_view.dart';
-import 'package:cinetrack/src/core/common/widgets/loading_view.dart';
+import 'package:cinetrack/src/core/common/widgets/movie_list_skeleton.dart';
 import 'package:cinetrack/src/core/errors/failure_copy.dart';
+import 'package:cinetrack/src/features/home/presentation/logic/tab_reselect_notifier.dart';
 import 'package:cinetrack/src/features/movies/data/models/movie_model.dart';
 import 'package:cinetrack/src/features/movies/presentation/logic/trending_notifier.dart';
+import 'package:cinetrack/src/features/movies/presentation/widgets/featured_movie_card.dart';
 import 'package:cinetrack/src/features/movies/presentation/widgets/movie_list_tile.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -30,7 +32,8 @@ class TrendingPage extends ConsumerWidget {
       body: SafeArea(
         top: false,
         child: switch (feed) {
-          AsyncValue(isLoading: true, hasValue: false) => const LoadingView(),
+          AsyncValue(isLoading: true, hasValue: false) =>
+            const MovieListSkeleton(featured: true),
           AsyncData(:final value) =>
             value.movies.isEmpty
                 ? const EmptyView(
@@ -43,7 +46,7 @@ class TrendingPage extends ConsumerWidget {
             error: error,
             onRetry: () => ref.invalidate(trendingProvider),
           ),
-          _ => const LoadingView(),
+          _ => const MovieListSkeleton(featured: true),
         },
       ),
     );
@@ -94,19 +97,39 @@ class _TrendingListState extends ConsumerState<_TrendingList> {
       ..showSnackBar(SnackBar(content: Text(describeFailure(failure).title)));
   }
 
+  void _scrollToTop() {
+    if (!_controller.hasClients || _controller.offset <= 0) return;
+    _controller.animateTo(
+      0,
+      duration: const Duration(milliseconds: 380),
+      curve: Curves.easeOutCubic,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    ref.listen(tabReselectProvider, (previous, next) {
+      if (next.index == 0) _scrollToTop();
+    });
     final movies = widget.feed.movies;
     return RefreshIndicator.adaptive(
       onRefresh: _onRefresh,
       child: ListView.builder(
         controller: _controller,
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.only(top: 4, bottom: 16),
+        padding: const EdgeInsets.only(bottom: 16),
         itemCount: movies.length + 1,
-        itemBuilder: (context, index) => index == movies.length
-            ? _ListFooter(feed: widget.feed)
-            : _tileFor(context, movies[index]),
+        itemBuilder: (context, index) {
+          if (index == movies.length) return _ListFooter(feed: widget.feed);
+          final movie = movies[index];
+          if (index == 0) {
+            return FeaturedMovieCard(
+              movie: movie,
+              onTap: () => _openDetails(context, movie),
+            );
+          }
+          return _tileFor(context, movie);
+        },
       ),
     );
   }
@@ -168,12 +191,18 @@ class _ListFooter extends ConsumerWidget {
   }
 }
 
+String _heroTagFor(MovieModel movie) => 'trending-${movie.id}';
+
+void _openDetails(BuildContext context, MovieModel movie) {
+  Navigator.of(
+    context,
+  ).push(movieDetailRoute(movie, heroTag: _heroTagFor(movie)));
+}
+
 Widget _tileFor(BuildContext context, MovieModel movie) {
-  final heroTag = 'trending-${movie.id}';
   return MovieListTile(
     movie: movie,
-    heroTag: heroTag,
-    onTap: () =>
-        Navigator.of(context).push(movieDetailRoute(movie, heroTag: heroTag)),
+    heroTag: _heroTagFor(movie),
+    onTap: () => _openDetails(context, movie),
   );
 }

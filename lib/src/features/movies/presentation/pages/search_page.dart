@@ -1,7 +1,7 @@
 import 'package:cinetrack/src/app/routes.dart';
 import 'package:cinetrack/src/core/common/widgets/empty_view.dart';
 import 'package:cinetrack/src/core/common/widgets/error_view.dart';
-import 'package:cinetrack/src/core/common/widgets/loading_view.dart';
+import 'package:cinetrack/src/core/common/widgets/movie_list_skeleton.dart';
 import 'package:cinetrack/src/features/movies/data/models/movie_model.dart';
 import 'package:cinetrack/src/features/movies/presentation/logic/search_notifier.dart';
 import 'package:cinetrack/src/features/movies/presentation/widgets/movie_list_tile.dart';
@@ -83,7 +83,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                     )
                   : switch (results) {
                       AsyncValue(isLoading: true, hasValue: false) =>
-                        const LoadingView(),
+                        const MovieListSkeleton(),
                       AsyncData(:final value) =>
                         value.isEmpty
                             ? EmptyView(
@@ -96,7 +96,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                         error: error,
                         onRetry: () => ref.invalidate(searchResultsProvider),
                       ),
-                      _ => const LoadingView(),
+                      _ => const MovieListSkeleton(),
                     },
             ),
           ],

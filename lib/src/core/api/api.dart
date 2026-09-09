@@ -8,4 +8,6 @@ class Api {
   static const String searchMovies = '/search/movie';
 
   static String movieDetails(int id) => '/movie/$id';
+
+  static String movieRecommendations(int id) => '/movie/$id/recommendations';
 }

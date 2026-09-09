@@ -11,6 +11,8 @@ abstract class MoviesDataSource {
   Future<Paginated<MovieModel>> search(String query, {int page = 1});
 
   Future<MovieDetailModel> details(int id);
+
+  Future<Paginated<MovieModel>> recommendations(int id);
 }
 
 class MoviesDataSourceImpl implements MoviesDataSource {
@@ -37,6 +39,12 @@ class MoviesDataSourceImpl implements MoviesDataSource {
   Future<MovieDetailModel> details(int id) async {
     final json = await client.get(Api.movieDetails(id));
     return MovieDetailModel.fromJson(json);
+  }
+
+  @override
+  Future<Paginated<MovieModel>> recommendations(int id) async {
+    final json = await client.get(Api.movieRecommendations(id));
+    return Paginated.fromJson(json, MovieModel.fromJson);
   }
 }
 

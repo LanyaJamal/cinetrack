@@ -1,4 +1,5 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:cinetrack/src/app/routes.dart';
 import 'package:cinetrack/src/core/api/tmdb_image.dart';
 import 'package:cinetrack/src/core/common/widgets/poster_image.dart';
 import 'package:cinetrack/src/core/errors/error_parser.dart';
@@ -34,6 +35,7 @@ class _MovieDetailPageState extends ConsumerState<MovieDetailPage> {
 
   late final ScrollController _controller;
   double _collapse = 0;
+  double _scroll = 0;
 
   @override
   void initState() {
@@ -49,9 +51,15 @@ class _MovieDetailPageState extends ConsumerState<MovieDetailPage> {
   }
 
   void _onScroll() {
-    final next = (_controller.offset / _collapseDistance).clamp(0.0, 1.0);
-    if ((next - _collapse).abs() < 0.01) return;
-    setState(() => _collapse = next);
+    final offset = _controller.offset;
+    final next = (offset / _collapseDistance).clamp(0.0, 1.0);
+    if ((offset - _scroll).abs() < 1 && (next - _collapse).abs() < 0.01) {
+      return;
+    }
+    setState(() {
+      _scroll = offset;
+      _collapse = next;
+    });
   }
 
   @override
@@ -76,7 +84,7 @@ class _MovieDetailPageState extends ConsumerState<MovieDetailPage> {
                 bottom: 32 + MediaQuery.paddingOf(context).bottom,
               ),
               children: [
-                _Backdrop(movie: movie),
+                _Backdrop(movie: movie, scroll: _scroll),
                 SafeArea(
                   top: false,
                   bottom: false,
@@ -88,6 +96,7 @@ class _MovieDetailPageState extends ConsumerState<MovieDetailPage> {
                     ],
                   ),
                 ),
+                _MoreLikeThis(movieId: movie.id),
               ],
             ),
             _CollapsingBar(progress: _collapse, title: movie.title),
@@ -184,9 +193,13 @@ class _BackButton extends StatelessWidget {
 }
 
 class _Backdrop extends StatelessWidget {
-  const _Backdrop({required this.movie});
+  const _Backdrop({required this.movie, required this.scroll});
+
+  static const double _height = 260;
+  static const double _travel = 72;
 
   final MovieModel movie;
+  final double scroll;
 
   @override
   Widget build(BuildContext context) {
@@ -194,35 +207,47 @@ class _Backdrop extends StatelessWidget {
     final url =
         TmdbImage.backdrop(movie.backdropPath) ??
         TmdbImage.poster(movie.posterPath, size: PosterSize.w500);
-    return SizedBox(
-      height: 260,
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          if (url == null)
-            ColoredBox(color: colors.surfaceContainerHigh)
-          else
-            CachedNetworkImage(
-              imageUrl: url,
-              fit: BoxFit.cover,
-              fadeInDuration: const Duration(milliseconds: 240),
-              fadeInCurve: Curves.easeOut,
-              placeholder: (context, url) =>
-                  ColoredBox(color: colors.surfaceContainerHigh),
-              errorWidget: (context, url, error) =>
-                  ColoredBox(color: colors.surfaceContainerHigh),
-            ),
-          DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                stops: const [0.45, 1],
-                colors: [Colors.transparent, colors.surface],
+    final shift = (scroll * 0.4).clamp(0.0, _travel);
+    return ClipRect(
+      child: SizedBox(
+        height: _height,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            OverflowBox(
+              alignment: Alignment.bottomCenter,
+              maxHeight: _height + _travel,
+              child: Transform.translate(
+                offset: Offset(0, shift),
+                child: SizedBox(
+                  height: _height + _travel,
+                  child: url == null
+                      ? ColoredBox(color: colors.surfaceContainerHigh)
+                      : CachedNetworkImage(
+                          imageUrl: url,
+                          fit: BoxFit.cover,
+                          fadeInDuration: const Duration(milliseconds: 240),
+                          fadeInCurve: Curves.easeOut,
+                          placeholder: (context, url) =>
+                              ColoredBox(color: colors.surfaceContainerHigh),
+                          errorWidget: (context, url, error) =>
+                              ColoredBox(color: colors.surfaceContainerHigh),
+                        ),
+                ),
               ),
             ),
-          ),
-        ],
+            DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  stops: const [0.45, 1],
+                  colors: [Colors.transparent, colors.surface],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -516,6 +541,169 @@ class _DetailUnavailable extends StatelessWidget {
         ),
         TextButton(onPressed: onRetry, child: const Text('Try again')),
       ],
+    );
+  }
+}
+
+class _MoreLikeThis extends ConsumerWidget {
+  const _MoreLikeThis({required this.movieId});
+
+  final int movieId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final related = ref.watch(movieRecommendationsProvider(movieId));
+    return Transform.translate(
+      offset: const Offset(0, -34),
+      child: switch (related) {
+        AsyncData(:final value) when value.isEmpty => const SizedBox.shrink(),
+        AsyncData(:final value) => _RelatedRow(movies: value),
+        AsyncError() => const SizedBox.shrink(),
+        _ => const _RelatedRow(movies: null),
+      },
+    );
+  }
+}
+
+class _RelatedRow extends StatelessWidget {
+  const _RelatedRow({required this.movies});
+
+  static const double _posterWidth = 104;
+  static const double _posterHeight = 156;
+
+  final List<MovieModel>? movies;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final insets = MediaQuery.paddingOf(context);
+    final items = movies;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: EdgeInsets.fromLTRB(
+            20 + insets.left,
+            30,
+            20 + insets.right,
+            12,
+          ),
+          child: Text(
+            'More like this',
+            style: theme.textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+        SizedBox(
+          height: _posterHeight + 6 + 36,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: EdgeInsets.fromLTRB(
+              20 + insets.left,
+              0,
+              8 + insets.right,
+              0,
+            ),
+            itemCount: items?.length ?? 4,
+            itemBuilder: (context, index) => Padding(
+              padding: const EdgeInsets.only(right: 12),
+              child: items == null
+                  ? const _RelatedPlaceholder(
+                      width: _posterWidth,
+                      height: _posterHeight,
+                    )
+                  : _RelatedCard(
+                      movie: items[index],
+                      width: _posterWidth,
+                      height: _posterHeight,
+                    ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _RelatedCard extends StatelessWidget {
+  const _RelatedCard({
+    required this.movie,
+    required this.width,
+    required this.height,
+  });
+
+  final MovieModel movie;
+  final double width;
+  final double height;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final heroTag = 'related-${movie.id}';
+    return SizedBox(
+      width: width,
+      child: InkWell(
+        onTap: () => Navigator.of(
+          context,
+        ).push(movieDetailRoute(movie, heroTag: heroTag)),
+        customBorder: AppShape.small,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            PosterImage(
+              path: movie.posterPath,
+              width: width,
+              height: height,
+              heroTag: heroTag,
+            ),
+            const SizedBox(height: 6),
+            Text(
+              movie.title,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.labelMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+                height: 1.25,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _RelatedPlaceholder extends StatelessWidget {
+  const _RelatedPlaceholder({required this.width, required this.height});
+
+  final double width;
+  final double height;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = Theme.of(context).colorScheme.surfaceContainerHigh;
+    return SizedBox(
+      width: width,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            height: height,
+            child: DecoratedBox(
+              decoration: ShapeDecoration(color: color, shape: AppShape.small),
+            ),
+          ),
+          const SizedBox(height: 8),
+          SizedBox(
+            width: width * 0.7,
+            height: 11,
+            child: DecoratedBox(
+              decoration: ShapeDecoration(color: color, shape: AppShape.small),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
